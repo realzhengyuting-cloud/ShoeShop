@@ -9,3 +9,5 @@ app/build
 .externalNativeBuild
 .cxx
 local.properties
+/*.png
+/MC_L1_*.pdf

@@ -3,11 +3,10 @@ package com.example.shoeshop.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,26 +20,100 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.shoeshop.model.Shoe
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     shoe: Shoe,
     onBackClick: () -> Unit,
     onAddToCart: (Shoe) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = shoe.name,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { }) {
+                        Icon(
+                            Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 12.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .navigationBarsPadding(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Price",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$${shoe.price}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Button(
+                        onClick = { onAddToCart(shoe) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
+                    ) {
+                        Text(
+                            "Add to Bag",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+            }
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxSize()
+                .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(360.dp)
+                    .height(320.dp)
                     .background(MaterialTheme.colorScheme.surface)
             ) {
                 AsyncImage(
@@ -51,40 +124,6 @@ fun DetailScreen(
                         .padding(32.dp),
                     contentScale = ContentScale.Fit
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .statusBarsPadding(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
-                    ) {
-                        Icon(
-                            Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
             }
 
             Column(
@@ -109,14 +148,10 @@ fun DetailScreen(
                     lineHeight = 22.sp
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Size",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
+                Text(
+                    text = "Size",
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -140,48 +175,6 @@ fun DetailScreen(
                             )
                         }
                     }
-                }
-            }
-        }
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shadowElevation = 12.dp,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                    .navigationBarsPadding(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Price",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "$${shoe.price}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Button(
-                    onClick = { onAddToCart(shoe) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
-                ) {
-                    Text(
-                        "Add to Bag",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
                 }
             }
         }

@@ -5,13 +5,23 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
-import com.example.shoeshop.model.CartItem
-import com.example.shoeshop.model.Shoe
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.example.shoeshop.data.ShoeData
+import com.example.shoeshop.navigation.CartRoute
+import com.example.shoeshop.navigation.DetailRoute
+import com.example.shoeshop.navigation.HomeRoute
 import com.example.shoeshop.ui.screens.CartScreen
 import com.example.shoeshop.ui.screens.DetailScreen
 import com.example.shoeshop.ui.screens.HomeScreen
 import com.example.shoeshop.ui.theme.ShoeShopTheme
+import com.example.shoeshop.viewmodel.CartViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,82 +35,58 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-enum class Screen {
-    Home, Detail, Cart
-}
-
 @Composable
-fun ShoeShopApp() {
-    var currentScreen by remember { mutableStateOf(Screen.Home) }
-    var selectedShoe by remember { mutableStateOf<Shoe?>(null) }
-    var cartItems by remember { mutableStateOf(listOf<CartItem>()) }
-
+fun ShoeShopApp(cartViewModel: CartViewModel = viewModel()) {
+    val navController = rememberNavController()
+    val cartItems by cartViewModel.cartItems.collectAsStateWithLifecycle()
     val cartItemCount = cartItems.sumOf { it.quantity }
 
-    AnimatedContent(
-        targetState = currentScreen,
-        transitionSpec = {
-            when (targetState) {
-                Screen.Detail, Screen.Cart -> {
-                    fadeIn(initialAlpha = 0.3f) + slideInHorizontally { it / 4 } togetherWith
-                            fadeOut(targetAlpha = 0.3f) + slideOutHorizontally { -it / 4 }
-                }
-                Screen.Home -> {
-                    fadeIn(initialAlpha = 0.3f) + slideInHorizontally { -it / 4 } togetherWith
-                            fadeOut(targetAlpha = 0.3f) + slideOutHorizontally { it / 4 }
-                }
-            }
+    NavHost(
+        navController = navController,
+        startDestination = HomeRoute,
+        enterTransition = {
+            fadeIn(animationSpec = tween(300)) + slideInHorizontally { it / 4 }
         },
-        label = "screen_transition"
-    ) { screen ->
-        when (screen) {
-            Screen.Home -> HomeScreen(
+        exitTransition = {
+            fadeOut(animationSpec = tween(300)) + slideOutHorizontally { -it / 4 }
+        },
+        popEnterTransition = {
+            fadeIn(animationSpec = tween(300)) + slideInHorizontally { -it / 4 }
+        },
+        popExitTransition = {
+            fadeOut(animationSpec = tween(300)) + slideOutHorizontally { it / 4 }
+        }
+    ) {
+        composable<HomeRoute> {
+            HomeScreen(
                 cartItemCount = cartItemCount,
                 onShoeClick = { shoe ->
-                    selectedShoe = shoe
-                    currentScreen = Screen.Detail
+                    navController.navigate(DetailRoute(shoeId = shoe.id))
                 },
-                onCartClick = { currentScreen = Screen.Cart }
+                onCartClick = { navController.navigate(CartRoute) }
             )
+        }
 
-            Screen.Detail -> selectedShoe?.let { shoe ->
-                DetailScreen(
-                    shoe = shoe,
-                    onBackClick = { currentScreen = Screen.Home },
-                    onAddToCart = { addedShoe ->
-                        val existing = cartItems.find { it.shoe.id == addedShoe.id }
-                        cartItems = if (existing != null) {
-                            cartItems.map {
-                                if (it.shoe.id == addedShoe.id) it.copy(quantity = it.quantity + 1)
-                                else it
-                            }
-                        } else {
-                            cartItems + CartItem(addedShoe)
-                        }
-                        currentScreen = Screen.Cart
-                    }
-                )
-            }
-
-            Screen.Cart -> CartScreen(
-                cartItems = cartItems,
-                onBackClick = { currentScreen = Screen.Home },
-                onIncrement = { shoeId ->
-                    cartItems = cartItems.map {
-                        if (it.shoe.id == shoeId) it.copy(quantity = it.quantity + 1)
-                        else it
-                    }
-                },
-                onDecrement = { shoeId ->
-                    cartItems = cartItems.mapNotNull {
-                        if (it.shoe.id == shoeId) {
-                            if (it.quantity > 1) it.copy(quantity = it.quantity - 1) else null
-                        } else it
-                    }
-                },
-                onRemove = { shoeId ->
-                    cartItems = cartItems.filter { it.shoe.id != shoeId }
+        composable<DetailRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<DetailRoute>()
+            val shoe = ShoeData.shoes.first { it.id == route.shoeId }
+            DetailScreen(
+                shoe = shoe,
+                onBackClick = { navController.popBackStack() },
+                onAddToCart = { addedShoe ->
+                    cartViewModel.addToCart(addedShoe)
+                    navController.navigate(CartRoute)
                 }
+            )
+        }
+
+        composable<CartRoute> {
+            CartScreen(
+                cartItems = cartItems,
+                onBackClick = { navController.popBackStack() },
+                onIncrement = { shoeId -> cartViewModel.increment(shoeId) },
+                onDecrement = { shoeId -> cartViewModel.decrement(shoeId) },
+                onRemove = { shoeId -> cartViewModel.remove(shoeId) }
             )
         }
     }
